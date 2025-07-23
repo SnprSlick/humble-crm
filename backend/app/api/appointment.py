@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+<<<<<<< HEAD
 from typing import List
 from datetime import datetime
 
@@ -32,6 +33,55 @@ def get_appointment_calendar_events(db: Session = Depends(get_db)):
         }
         for appt in appointments
     ]
+=======
+from app.core.database import get_db
+from app.models.customer import Customer
+from app.models.order import Order
+from app.models.appointment import Appointment  # ✅ ← this fixes the error
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+
+router = APIRouter(prefix="/appointments", tags=["Appointments"])
+
+
+
+class AppointmentCreate(BaseModel):
+    title: str
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    pickup_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    customer_id: Optional[int] = None
+    invoice_id: Optional[int] = None
+    service_id: Optional[int] = None
+
+
+class AppointmentUpdate(AppointmentCreate):
+    pass
+
+
+class AppointmentOut(BaseModel):
+    id: int
+    title: str
+    start_time: datetime
+    end_time: Optional[datetime]
+    pickup_date: Optional[datetime]
+    notes: Optional[str]
+    customer_id: Optional[int]
+    invoice_id: Optional[int]
+    service_id: Optional[int]
+
+    class Config:
+        orm_mode = True
+
+
+@router.get("/", response_model=list[AppointmentOut])
+def get_appointments(db: Session = Depends(get_db)):
+    return db.query(Appointment).all()
+
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
 
 @router.post("/", response_model=AppointmentOut)
 def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
@@ -39,6 +89,7 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
     db.add(appointment)
     db.commit()
     db.refresh(appointment)
+<<<<<<< HEAD
 
     # Send to Google Calendar
     try:
@@ -53,6 +104,11 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
 
     return appointment
 
+=======
+    return appointment
+
+
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
 @router.patch("/{appointment_id}", response_model=AppointmentOut)
 def update_appointment(appointment_id: int, appt: AppointmentUpdate, db: Session = Depends(get_db)):
     appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
@@ -66,6 +122,10 @@ def update_appointment(appointment_id: int, appt: AppointmentUpdate, db: Session
     db.refresh(appointment)
     return appointment
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
 @router.delete("/{appointment_id}")
 def delete_appointment(appointment_id: int, db: Session = Depends(get_db)):
     appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()

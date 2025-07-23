@@ -5,7 +5,11 @@ from app.models.customer import Customer
 from app.models.order import Order
 from app.models.line_item import LineItem
 
+<<<<<<< HEAD
 env_path = os.path.join(os.path.dirname(__file__), "../.env")
+=======
+env_path = os.path.join(os.path.dirname(__file__), "../key.env")
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
 load_dotenv(env_path)
 print(f"✅ [wave] Loaded .env from: {env_path}")
 

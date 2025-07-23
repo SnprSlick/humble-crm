@@ -16,9 +16,13 @@
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-big-calendar": "^1.19.4",
+<<<<<<< HEAD
     "react-datepicker": "^8.4.0",
     "react-dom": "^19.1.0",
     "react-modal": "^3.16.3",
+=======
+    "react-dom": "^19.1.0",
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
     "react-router-dom": "^7.7.0",
     "react-tooltip": "^5.29.1"
   },

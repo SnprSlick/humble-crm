@@ -1,9 +1,16 @@
+<<<<<<< HEAD
 import React, { useEffect, useState } from "react";
+=======
+import React, { useEffect, useState, useRef } from "react";
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../styles/calendar-overrides.css";
+<<<<<<< HEAD
 import CreateAppointmentModal from "../components/CreateAppointmentModal";
+=======
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
 
 const localizer = momentLocalizer(moment);
 
@@ -13,6 +20,7 @@ export default function CalendarPage() {
   const [date, setDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+<<<<<<< HEAD
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [clickedDate, setClickedDate] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -64,6 +72,47 @@ export default function CalendarPage() {
     }
   }, [createModalOpen]);
 
+=======
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/google-calendar/events`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch events");
+        return res.json();
+      })
+      .then((data) => {
+        const rawEvents = data?.events || [];
+        const converted = rawEvents.map((evt) => {
+          const startRaw = evt.start?.dateTime || evt.start?.date;
+          const endRaw = evt.end?.dateTime || evt.end?.date || startRaw;
+          return {
+            id: evt.id,
+            title: evt.summary || "Untitled",
+            start: new Date(startRaw),
+            end: new Date(endRaw),
+            tooltip: evt.description || "",
+            location: evt.location || "",
+            description: evt.description || "",
+          };
+        });
+
+        if (converted.length === 0) {
+          converted.push({
+            id: "fallback",
+            title: "Google Fallback Event",
+            start: new Date(),
+            end: new Date(Date.now() + 60 * 60 * 1000),
+            tooltip: "Generated to test event render",
+          });
+        }
+
+        setAppointments(converted);
+      })
+      .catch((err) => console.error("Failed to fetch calendar events:", err));
+  }, []);
+
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
   const closeModal = () => {
     setModalVisible(false);
     setTimeout(() => setSelectedEvent(null), 200);
@@ -79,6 +128,7 @@ export default function CalendarPage() {
     setDate(newDate);
   };
 
+<<<<<<< HEAD
   const handleDateClick = ({ start }) => {
     setClickedDate(start);
     setCreateModalOpen(true);
@@ -113,6 +163,13 @@ export default function CalendarPage() {
         </button>
       </div>
 
+=======
+  return (
+    <div className="p-6 bg-background text-text min-h-screen">
+      <h2 className="text-2xl font-bold mb-4">📅 Calendar</h2>
+
+      {/* Controls */}
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
       <div className="mb-4 flex flex-wrap gap-2">
         <button onClick={() => navigate("subtract")} className="calendar-btn">◀ Prev</button>
         <button onClick={() => setDate(new Date())} className="calendar-btn">⏺ Today</button>
@@ -122,13 +179,23 @@ export default function CalendarPage() {
           <button
             key={v}
             onClick={() => setView(v)}
+<<<<<<< HEAD
             className={`calendar-btn ${view === v ? "bg-red-700" : "bg-accent"}`}
+=======
+            className={`calendar-btn ${
+              view === v ? "bg-red-700" : "bg-accent"
+            }`}
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
           >
             {v.charAt(0).toUpperCase() + v.slice(1)}
           </button>
         ))}
       </div>
 
+<<<<<<< HEAD
+=======
+      {/* Calendar */}
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
       <div className="border border-border p-2 rounded shadow bg-surface">
         <Calendar
           localizer={localizer}
@@ -140,6 +207,7 @@ export default function CalendarPage() {
           onView={setView}
           date={date}
           onNavigate={setDate}
+<<<<<<< HEAD
           selectable
           onSelectEvent={openModal}
           onSelectSlot={handleDateClick}
@@ -149,6 +217,15 @@ export default function CalendarPage() {
         />
       </div>
 
+=======
+          popup
+          style={{ height: 750 }}
+          onSelectEvent={openModal}
+        />
+      </div>
+
+      {/* Modal */}
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
       {selectedEvent && (
         <div
           className={`fixed inset-0 flex items-center justify-center z-50 transition-opacity duration-200 ${
@@ -194,12 +271,15 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
+<<<<<<< HEAD
 
       <CreateAppointmentModal
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         prefillDate={clickedDate}
       />
+=======
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
     </div>
   );
 }

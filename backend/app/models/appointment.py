@@ -11,14 +11,26 @@ class Appointment(Base):
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=True)
     pickup_date = Column(DateTime, nullable=True)
+<<<<<<< HEAD
+=======
+
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
     notes = Column(Text, nullable=True)
 
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
     invoice_id = Column(Integer, ForeignKey("orders.id"), nullable=True)
+<<<<<<< HEAD
     service_id = Column(Integer, nullable=True)
+=======
+    service_id = Column(Integer, nullable=True)  # We'll link this later when service jobs are formalized
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
 
     customer = relationship("Customer", back_populates="appointments")
     invoice = relationship("Order", back_populates="appointment")
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> efebc3ffef6acf89fff72479c2547168be75158d
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
