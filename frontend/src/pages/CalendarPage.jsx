@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../styles/calendar-overrides.css";
+import CreateAppointmentModal from "../components/CreateAppointmentModal";
 
 const localizer = momentLocalizer(moment);
 
@@ -12,44 +13,56 @@ export default function CalendarPage() {
   const [date, setDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [clickedDate, setClickedDate] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+  const fetchAppointments = async () => {
+    try {
+      const [googleRes, crmRes] = await Promise.all([
+        fetch(`${API_URL}/api/google-calendar/events`),
+        fetch(`${API_URL}/api/appointments/calendar-events`)
+      ]);
+
+      const googleData = await googleRes.json();
+      const crmData = await crmRes.json();
+
+      const googleEvents = (googleData?.events || []).map((evt) => {
+        const startRaw = evt.start?.dateTime || evt.start?.date;
+        const endRaw = evt.end?.dateTime || evt.end?.date || startRaw;
+        return {
+          id: evt.id,
+          title: evt.summary || "Untitled",
+          start: new Date(startRaw),
+          end: new Date(endRaw),
+          tooltip: evt.description || "",
+          description: evt.description || "",
+          location: evt.location || "",
+          source: "google",
+        };
+      });
+
+      const crmEvents = (crmData || []).map((evt) => ({
+        ...evt,
+        start: new Date(evt.start),
+        end: new Date(evt.end),
+      }));
+
+      setAppointments([...googleEvents, ...crmEvents]);
+    } catch (err) {
+      console.error("❌ Failed to load calendar events:", err);
+    }
+  };
+
   useEffect(() => {
-    fetch(`${API_URL}/api/google-calendar/events`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch events");
-        return res.json();
-      })
-      .then((data) => {
-        const rawEvents = data?.events || [];
-        const converted = rawEvents.map((evt) => {
-          const startRaw = evt.start?.dateTime || evt.start?.date;
-          const endRaw = evt.end?.dateTime || evt.end?.date || startRaw;
-          return {
-            id: evt.id,
-            title: evt.summary || "Untitled",
-            start: new Date(startRaw),
-            end: new Date(endRaw),
-            tooltip: evt.description || "",
-            location: evt.location || "",
-            description: evt.description || "",
-          };
-        });
-
-        if (converted.length === 0) {
-          converted.push({
-            id: "fallback",
-            title: "Google Fallback Event",
-            start: new Date(),
-            end: new Date(Date.now() + 60 * 60 * 1000),
-            tooltip: "Generated to test event render",
-          });
-        }
-
-        setAppointments(converted);
-      })
-      .catch((err) => console.error("Failed to fetch calendar events:", err));
+    fetchAppointments();
   }, []);
+
+  useEffect(() => {
+    if (!createModalOpen) {
+      fetchAppointments();
+    }
+  }, [createModalOpen]);
 
   const closeModal = () => {
     setModalVisible(false);
@@ -66,11 +79,40 @@ export default function CalendarPage() {
     setDate(newDate);
   };
 
+  const handleDateClick = ({ start }) => {
+    setClickedDate(start);
+    setCreateModalOpen(true);
+  };
+
+  const eventStyleGetter = (event) => {
+    if (event.source === "crm") {
+      return {
+        style: {
+          backgroundColor: "#991b1b",
+          color: "white",
+          borderRadius: "5px",
+          padding: "4px",
+        },
+      };
+    }
+    return {};
+  };
+
   return (
     <div className="p-6 bg-background text-text min-h-screen">
-      <h2 className="text-2xl font-bold mb-4">📅 Calendar</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">📅 Calendar</h2>
+        <button
+          onClick={() => {
+            setClickedDate(null);
+            setCreateModalOpen(true);
+          }}
+          className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
+        >
+          + Create Appointment
+        </button>
+      </div>
 
-      {/* Controls */}
       <div className="mb-4 flex flex-wrap gap-2">
         <button onClick={() => navigate("subtract")} className="calendar-btn">◀ Prev</button>
         <button onClick={() => setDate(new Date())} className="calendar-btn">⏺ Today</button>
@@ -80,16 +122,13 @@ export default function CalendarPage() {
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`calendar-btn ${
-              view === v ? "bg-red-700" : "bg-accent"
-            }`}
+            className={`calendar-btn ${view === v ? "bg-red-700" : "bg-accent"}`}
           >
             {v.charAt(0).toUpperCase() + v.slice(1)}
           </button>
         ))}
       </div>
 
-      {/* Calendar */}
       <div className="border border-border p-2 rounded shadow bg-surface">
         <Calendar
           localizer={localizer}
@@ -101,13 +140,15 @@ export default function CalendarPage() {
           onView={setView}
           date={date}
           onNavigate={setDate}
+          selectable
+          onSelectEvent={openModal}
+          onSelectSlot={handleDateClick}
           popup
           style={{ height: 750 }}
-          onSelectEvent={openModal}
+          eventPropGetter={eventStyleGetter}
         />
       </div>
 
-      {/* Modal */}
       {selectedEvent && (
         <div
           className={`fixed inset-0 flex items-center justify-center z-50 transition-opacity duration-200 ${
@@ -153,6 +194,12 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
+
+      <CreateAppointmentModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        prefillDate={clickedDate}
+      />
     </div>
   );
 }

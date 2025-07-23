@@ -14,13 +14,11 @@ class Customer(Base):
     phone = Column(String, nullable=True)
     address = Column(String, nullable=True)
     source = Column(String)
-    external_id = Column(JSON, default=[])  # Changed from {} to [] to store list of external IDs
+    external_id = Column(JSON, default=[])
     synced_at = Column(DateTime, default=datetime.utcnow)
     notes = Column(String, nullable=True)
     vehicle_make = Column(String, nullable=True)
     vehicle_model = Column(String, nullable=True)
 
-    orders = relationship("Order", back_populates="customer")  # This relationship links to orders
+    orders = relationship("Order", back_populates="customer")
     appointments = relationship("Appointment", back_populates="customer")
-
-
