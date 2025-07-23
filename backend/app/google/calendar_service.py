@@ -1,34 +1,21 @@
 import os
-import pickle
-import datetime
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
+import json
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from datetime import datetime, timezone
 
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+# Load service account credentials from environment
+SERVICE_ACCOUNT_INFO = json.loads(os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"))
+TARGET_CALENDAR_NAME = os.getenv("TARGET_CALENDAR_NAME", "HUMBLE PERFORMANCE")
 
-CREDENTIALS_PATH = os.path.join(os.path.dirname(__file__), "credentials.json")
-TOKEN_PATH = os.path.join(os.path.dirname(__file__), "token.pickle")
-TARGET_CALENDAR_NAME = "HUMBLE PERFORMANCE"  # Can match summary or summaryOverride
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 def get_calendar_service():
-    creds = None
-
-    if os.path.exists(TOKEN_PATH):
-        with open(TOKEN_PATH, "rb") as token:
-            creds = pickle.load(token)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-            creds = flow.run_local_server(port=8888)
-
-        with open(TOKEN_PATH, "wb") as token:
-            pickle.dump(creds, token)
-
-    return build("calendar", "v3", credentials=creds)
+    credentials = service_account.Credentials.from_service_account_info(
+        SERVICE_ACCOUNT_INFO,
+        scopes=SCOPES
+    )
+    return build("calendar", "v3", credentials=credentials)
 
 def find_calendar_id(service, target_name):
     calendar_list = service.calendarList().list().execute()
@@ -41,7 +28,7 @@ def fetch_events():
     service = get_calendar_service()
     calendar_id = find_calendar_id(service, TARGET_CALENDAR_NAME)
 
-    now = datetime.datetime.utcnow().isoformat() + "Z"
+    now = datetime.now(timezone.utc).isoformat()
     events_result = (
         service.events()
         .list(
