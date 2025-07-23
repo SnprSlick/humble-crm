@@ -6,10 +6,21 @@ const ToDoContext = createContext();
 export const ToDoProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
 
+  // Fallback to localhost if VITE_API_URL is not defined
+  const baseURL =
+    import.meta.env.VITE_API_URL || "http://localhost:8000";
+
   const fetchTasks = () => {
+    const url = `${baseURL}/api/todos`;
+    console.log("Fetching todos from:", url);
+
     axios
-      .get(`${import.meta.env.VITE_API_URL}/api/todos`)
-      .then((res) => setTasks(res.data))
+      .get(url)
+      .then((res) => {
+        const parsed =
+          typeof res.data === "string" ? JSON.parse(res.data) : res.data;
+        setTasks(Array.isArray(parsed) ? parsed : []);
+      })
       .catch((err) => console.error("Failed to fetch todos:", err));
   };
 
@@ -19,7 +30,7 @@ export const ToDoProvider = ({ children }) => {
 
   const addTask = async (text) => {
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/todos`, { text });
+      await axios.post(`${baseURL}/api/todos`, { text });
       fetchTasks();
     } catch (err) {
       console.error("Failed to add task:", err);
@@ -28,7 +39,7 @@ export const ToDoProvider = ({ children }) => {
 
   const deleteTask = async (id) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/todos/${id}`);
+      await axios.delete(`${baseURL}/api/todos/${id}`);
       fetchTasks();
     } catch (err) {
       console.error("Failed to delete task:", err);
@@ -37,7 +48,7 @@ export const ToDoProvider = ({ children }) => {
 
   const toggleDone = async (task) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/todos/${task.id}`, null, {
+      await axios.put(`${baseURL}/api/todos/${task.id}`, null, {
         params: { done: !task.done },
       });
       fetchTasks();

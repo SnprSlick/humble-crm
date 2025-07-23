@@ -22,7 +22,7 @@ os.environ["PYTHONTZPATH"] = os.path.join(sys.prefix, "lib", "tzdata")
 from dotenv import load_dotenv
 
 # ✅ Load .env only if it exists (for local dev)
-env_path = os.path.join(os.path.dirname(__file__), "key.env")
+env_path = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(env_path):
     print("✅ Loading .env from:", env_path)
     load_dotenv(env_path)
