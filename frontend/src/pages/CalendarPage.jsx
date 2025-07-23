@@ -46,6 +46,7 @@ export default function CalendarPage() {
         ...evt,
         start: new Date(evt.start),
         end: new Date(evt.end),
+        source: "crm",
       }));
 
       setAppointments([...googleEvents, ...crmEvents]);
@@ -72,6 +73,28 @@ export default function CalendarPage() {
   const openModal = (event) => {
     setSelectedEvent(event);
     setModalVisible(true);
+  };
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm("Are you sure you want to delete this appointment?");
+    if (!confirmed) return;
+
+    try {
+      const rawId = selectedEvent.id.startsWith("appt-")
+        ? selectedEvent.id.replace("appt-", "")
+        : selectedEvent.id;
+
+      const deleteUrl = `${API_URL}/api/appointments/${rawId}`;
+
+      const res = await fetch(deleteUrl, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+
+      console.log(`🗑️ Deleted appointment ${rawId}`);
+      fetchAppointments();
+      closeModal();
+    } catch (err) {
+      console.error("❌ Failed to delete appointment:", err);
+    }
   };
 
   const navigate = (direction) => {
@@ -151,11 +174,11 @@ export default function CalendarPage() {
 
       {selectedEvent && (
         <div
-          className={`fixed inset-0 flex items-center justify-center z-50 transition-opacity duration-200 ${
+          className={`fixed inset-0 flex items-center justify-center z-[999] transition-opacity duration-200 ${
             modalVisible ? "opacity-100 bg-black/70" : "opacity-0 pointer-events-none"
           }`}
         >
-          <div className="bg-surface p-6 rounded-lg shadow-lg w-[90%] max-w-md border border-border text-text transform transition-all duration-300 scale-100">
+          <div className="bg-surface p-6 rounded-lg shadow-lg w-[90%] max-w-md border border-border text-text transform transition-all duration-300 scale-100 z-[1000]">
             <h3 className="text-xl font-semibold mb-3 border-b border-border pb-2">
               {selectedEvent.title}
             </h3>
@@ -185,12 +208,28 @@ export default function CalendarPage() {
               )}
             </div>
 
-            <button
-              onClick={closeModal}
-              className="mt-6 px-4 py-2 bg-accent text-white rounded hover:bg-red-700 w-full"
-            >
-              Close
-            </button>
+            {/* Debug display */}
+            <pre className="text-xs text-muted mt-4 overflow-x-auto max-h-32">
+              {JSON.stringify(selectedEvent, null, 2)}
+            </pre>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={closeModal}
+                className="flex-1 px-4 py-2 bg-accent text-white rounded hover:bg-red-700"
+              >
+                Close
+              </button>
+
+              {(selectedEvent.source === "crm" || selectedEvent.id?.toString().startsWith("appt-")) && (
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 px-4 py-2 bg-red-800 text-white rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

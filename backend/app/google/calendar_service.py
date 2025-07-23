@@ -23,7 +23,7 @@ def get_calendar_service():
         print("❌ Failed to load Google Calendar credentials:", e)
         raise
 
-def create_event(title: str, description: str, start: datetime, end: datetime):
+def create_event(title: str, description: str, start: datetime, end: datetime) -> str:
     service = get_calendar_service()
 
     if not CALENDAR_ID:
@@ -45,13 +45,27 @@ def create_event(title: str, description: str, start: datetime, end: datetime):
     try:
         event = service.events().insert(calendarId=CALENDAR_ID, body=event_body).execute()
         print(f"✅ Google Calendar event created: {event.get('htmlLink')}")
+        return event.get("id")
     except Exception as e:
         print("❌ Failed to insert event into Google Calendar:", e)
         raise
 
+def delete_event(event_id: str):
+    service = get_calendar_service()
+
+    print(f"🧪 Attempting to delete Google Calendar event: {event_id}")
+    print(f"📆 CALENDAR_ID = {CALENDAR_ID}")
+
+    try:
+        service.events().delete(calendarId=CALENDAR_ID, eventId=event_id).execute()
+        print(f"✅ Google Calendar event deleted: {event_id}")
+    except Exception as e:
+        print(f"❌ Google Calendar delete failed for {event_id}: {e}")
+
 def fetch_events():
     service = get_calendar_service()
     now = datetime.utcnow().isoformat() + "Z"
+
     try:
         events_result = (
             service.events()
@@ -67,13 +81,4 @@ def fetch_events():
         return events_result.get("items", [])
     except Exception as e:
         print("❌ Failed to fetch events from Google Calendar:", e)
-        return []
-
-def list_calendars():
-    service = get_calendar_service()
-    try:
-        calendar_list = service.calendarList().list().execute()
-        return calendar_list.get("items", [])
-    except Exception as e:
-        print("❌ Failed to list calendars:", e)
         return []

@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
-from app.pydantic_models import AppointmentCreate, AppointmentUpdate, AppointmentOut
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -13,6 +12,7 @@ class Appointment(Base):
     end_time = Column(DateTime, nullable=True)
     pickup_date = Column(DateTime, nullable=True)
     notes = Column(Text, nullable=True)
+    google_event_id = Column(String, nullable=True)
 
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
     invoice_id = Column(Integer, ForeignKey("orders.id"), nullable=True)

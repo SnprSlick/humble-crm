@@ -48,13 +48,21 @@ export default function CreateAppointmentModal({ isOpen, onClose, prefillDate })
   };
 
   const handleSubmit = async () => {
+    if (!selectedCustomerId) {
+      alert("Please select a valid customer before saving.");
+      return;
+    }
+
     const payload = {
       title: `${type} - ${title}`,
       customer_id: selectedCustomerId,
       start_time: startTime.toISOString(),
       end_time: endTime ? endTime.toISOString() : null,
       notes,
+      appointment_type: type,
     };
+
+    console.log("📤 Submitting appointment:", payload);
 
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/appointments/`, {
       method: "POST",
