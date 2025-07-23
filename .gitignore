@@ -1,0 +1,13 @@
+# Secrets & env files
+credentials.json
+.env
+key.env
+token.pickle
+
+# Node / Python / build artifacts
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+

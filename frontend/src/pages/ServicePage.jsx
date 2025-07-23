@@ -1,0 +1,1 @@
+export default function ServicePage() { return <div style={{ padding: "2rem" }}><h2>Service Management</h2></div>; }
