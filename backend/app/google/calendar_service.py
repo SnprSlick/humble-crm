@@ -1,34 +1,23 @@
 import os
-import pickle
+import json
 import datetime
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
-
-CREDENTIALS_PATH = os.path.join(os.path.dirname(__file__), "credentials.json")
-TOKEN_PATH = os.path.join(os.path.dirname(__file__), "token.pickle")
-TARGET_CALENDAR_NAME = os.getenv("GOOGLE_CALENDAR_NAME", "HUMBLE PERFORMANCE")  # ← now uses env var
+TARGET_CALENDAR_NAME = os.getenv("GOOGLE_CALENDAR_NAME", "HUMBLE PERFORMANCE")
 
 def get_calendar_service():
-    creds = None
+    # Load service account credentials from env variable
+    service_account_info = json.loads(os.getenv("GOOGLE_SERVICE_ACCOUNT", "{}"))
+    if not service_account_info:
+        raise ValueError("GOOGLE_SERVICE_ACCOUNT env var is missing or empty")
 
-    if os.path.exists(TOKEN_PATH):
-        with open(TOKEN_PATH, "rb") as token:
-            creds = pickle.load(token)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-            creds = flow.run_local_server(port=8888)
-
-        with open(TOKEN_PATH, "wb") as token:
-            pickle.dump(creds, token)
-
-    return build("calendar", "v3", credentials=creds)
+    credentials = service_account.Credentials.from_service_account_info(
+        service_account_info,
+        scopes=SCOPES,
+    )
+    return build("calendar", "v3", credentials=credentials)
 
 def find_calendar_id(service, target_name):
     calendar_list = service.calendarList().list().execute()
@@ -54,7 +43,7 @@ def fetch_events():
         .execute()
     )
 
-    return { "events": events_result.get("items", []) }
+    return {"events": events_result.get("items", [])}
 
 def list_calendars():
     service = get_calendar_service()
