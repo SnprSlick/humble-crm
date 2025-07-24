@@ -15,41 +15,21 @@ export default function CalendarPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [clickedDate, setClickedDate] = useState(null);
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  const [submitting, setSubmitting] = useState(false);
+
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const fetchAppointments = async () => {
     try {
-      const [googleRes, crmRes] = await Promise.all([
-        fetch(`${API_URL}/api/google-calendar/events`),
-        fetch(`${API_URL}/api/appointments/calendar-events`)
-      ]);
-
-      const googleData = await googleRes.json();
-      const crmData = await crmRes.json();
-
-      const googleEvents = (googleData?.events || []).map((evt) => {
-        const startRaw = evt.start?.dateTime || evt.start?.date;
-        const endRaw = evt.end?.dateTime || evt.end?.date || startRaw;
-        return {
-          id: evt.id,
-          title: evt.summary || "Untitled",
-          start: new Date(startRaw),
-          end: new Date(endRaw),
-          tooltip: evt.description || "",
-          description: evt.description || "",
-          location: evt.location || "",
-          source: "google",
-        };
-      });
-
-      const crmEvents = (crmData || []).map((evt) => ({
+      const res = await fetch(`${API_URL}/api/appointments/calendar-events`);
+      const crmData = await res.json();
+      const crmEvents = crmData.map((evt) => ({
         ...evt,
         start: new Date(evt.start),
         end: new Date(evt.end),
         source: "crm",
       }));
-
-      setAppointments([...googleEvents, ...crmEvents]);
+      setAppointments(crmEvents);
     } catch (err) {
       console.error("❌ Failed to load calendar events:", err);
     }
@@ -85,7 +65,6 @@ export default function CalendarPage() {
         : selectedEvent.id;
 
       const deleteUrl = `${API_URL}/api/appointments/${rawId}`;
-
       const res = await fetch(deleteUrl, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
 
@@ -103,40 +82,39 @@ export default function CalendarPage() {
   };
 
   const handleDateClick = ({ start }) => {
+    if (submitting) return;
     setClickedDate(start);
     setCreateModalOpen(true);
   };
 
   const eventStyleGetter = (event) => {
-    if (event.source === "crm") {
-      return {
-        style: {
-          backgroundColor: "#991b1b",
-          color: "white",
-          borderRadius: "5px",
-          padding: "4px",
-        },
-      };
-    }
-    return {};
+    return {
+      style: {
+        backgroundColor: "#991b1b",
+        color: "white",
+        borderRadius: "5px",
+        padding: "4px",
+        zIndex: 2,
+      },
+    };
   };
 
   return (
-    <div className="p-6 bg-background text-text min-h-screen">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">📅 Calendar</h2>
+    <div className="p-4 md:p-6 bg-background text-text min-h-screen">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 sm:gap-0">
+        <h2 className="text-xl sm:text-2xl font-bold">📅 Calendar</h2>
         <button
           onClick={() => {
             setClickedDate(null);
             setCreateModalOpen(true);
           }}
-          className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
+          className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded shadow w-full sm:w-auto"
         >
           + Create Appointment
         </button>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-2 z-10 relative">
         <button onClick={() => navigate("subtract")} className="calendar-btn">◀ Prev</button>
         <button onClick={() => setDate(new Date())} className="calendar-btn">⏺ Today</button>
         <button onClick={() => navigate("add")} className="calendar-btn">Next ▶</button>
@@ -152,7 +130,7 @@ export default function CalendarPage() {
         ))}
       </div>
 
-      <div className="border border-border p-2 rounded shadow bg-surface">
+      <div className="border border-border p-2 rounded shadow bg-surface z-0 relative">
         <Calendar
           localizer={localizer}
           events={appointments}
@@ -208,11 +186,6 @@ export default function CalendarPage() {
               )}
             </div>
 
-            {/* Debug display */}
-            <pre className="text-xs text-muted mt-4 overflow-x-auto max-h-32">
-              {JSON.stringify(selectedEvent, null, 2)}
-            </pre>
-
             <div className="flex gap-3 mt-6">
               <button
                 onClick={closeModal}
@@ -221,7 +194,7 @@ export default function CalendarPage() {
                 Close
               </button>
 
-              {(selectedEvent.source === "crm" || selectedEvent.id?.toString().startsWith("appt-")) && (
+              {selectedEvent.source === "crm" && (
                 <button
                   onClick={handleDelete}
                   className="flex-1 px-4 py-2 bg-red-800 text-white rounded hover:bg-red-600"
@@ -236,8 +209,12 @@ export default function CalendarPage() {
 
       <CreateAppointmentModal
         isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
+        onClose={() => {
+          setCreateModalOpen(false);
+          setSubmitting(false);
+        }}
         prefillDate={clickedDate}
+        setSubmitting={setSubmitting}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 /* calendar-overrides.css */
 
+/* Base calendar styling */
 .rbc-calendar {
   background-color: transparent !important;
   color: inherit;
@@ -23,14 +24,10 @@
   z-index: 0;
 }
 
-/* Today highlight — reduced opacity for day/week views */
-.rbc-today {
-  background-color: rgba(211, 47, 47, 0.15) !important; /* subtle red */
-  border-color: var(--color-accent) !important;
-  font-weight: 700;
-  z-index: 50 !important;
-  box-shadow: 0 0 8px rgba(211, 47, 47, 0.3);
-  position: relative;
+/* Today highlight — fixed to stay behind events */
+.rbc-day-bg.rbc-today {
+  z-index: 0 !important;
+  background-color: rgba(211, 47, 47, 0.15) !important;
 }
 
 /* Off-range days */
@@ -54,7 +51,7 @@
   transition: border-color 0.3s ease;
 }
 
-/* Event boxes - keep same strong red */
+/* Event boxes - keep strong red, above all */
 .rbc-event {
   background-color: rgba(211, 47, 47, 0.8) !important;
   border: 1px solid var(--color-border) !important;
