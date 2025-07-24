@@ -1,13 +1,8 @@
 import os
 import requests
-from dotenv import load_dotenv
 from app.models.customer import Customer
 from app.models.order import Order
 from app.models.line_item import LineItem
-
-env_path = os.path.join(os.path.dirname(__file__), "../key.env")
-load_dotenv(env_path)
-print(f"✅ [wave] Loaded .env from: {env_path}")
 
 WAVE_API_TOKEN = os.getenv("WAVE_API_TOKEN")
 BUSINESS_ID = os.getenv("BUSINESS_ID")

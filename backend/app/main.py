@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from app.api import portal_auth
 from app.models import customer, order, appointment
 from app.api.google_calendar import router as google_calendar_router
 
@@ -16,13 +17,19 @@ print("🧠 PYTHONPATH includes:", sys.path)
 
 os.environ["PYTHONTZPATH"] = os.path.join(sys.prefix, "lib", "tzdata")
 
+# ✅ Load .env only when not in Railway
 from dotenv import load_dotenv
-env_path = os.path.join(os.path.dirname(__file__), ".env")
-if os.path.exists(env_path):
-    print("✅ Loading .env from:", env_path)
-    load_dotenv(env_path)
+if not os.getenv("RAILWAY_ENVIRONMENT"):
+    env_path = os.path.join(os.path.dirname(__file__), "..", "key.env")
+    if os.path.exists(env_path):
+        print("✅ Loading .env from:", env_path)
+        load_dotenv(env_path)
+        print("🐛 DEBUG: WAVE_API_TOKEN =", os.getenv("WAVE_API_TOKEN"))
+    else:
+        print("⚠️ key.env not found at:", env_path)
 else:
-    print("⚠️ key.env not found at:", env_path)
+    print("🚀 Running in Railway (using injected env vars)")
+
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,12 +60,13 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ← test only
+    allow_origins=["*"],  # ← test only, tighten in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+app.include_router(portal_auth.router)
 app.include_router(customer_router, prefix="/api")
 app.include_router(order_router, prefix="/api")
 app.include_router(drop_ship_router, prefix="/api")

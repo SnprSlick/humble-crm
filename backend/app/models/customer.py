@@ -1,9 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, JSON
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from app.core.base import Base  # ✅ shared Base across all models
 from datetime import datetime
-
-Base = declarative_base()
 
 class Customer(Base):
     __tablename__ = "customers"
@@ -22,3 +20,4 @@ class Customer(Base):
 
     orders = relationship("Order", back_populates="customer")
     appointments = relationship("Appointment", back_populates="customer")
+    user_account = relationship("UserCustomer", back_populates="customer", uselist=False)
