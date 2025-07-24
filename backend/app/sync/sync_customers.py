@@ -13,12 +13,10 @@ load_dotenv(env_path)
 def merge_and_sync_customers(wave_customers, wave_invoices, bigc_customers, bigc_orders):
     db = SessionLocal()
 
-    # Clear existing data
     db.query(LineItem).delete()
     db.query(Order).delete()
     db.query(Customer).delete()
 
-    # Combine and deduplicate customers
     combined_customers = wave_customers + bigc_customers
     unique_customers = {}
     for customer in combined_customers:
@@ -31,7 +29,8 @@ def merge_and_sync_customers(wave_customers, wave_invoices, bigc_customers, bigc
 
     print(f"[MERGE] Unique customers: {len(unique_customers)}")
 
-    id_map = {}  # external_id -> db.id
+    id_map = {}
+    contact_tracker = {}  # external_id -> latest_contacted
     for cust in unique_customers.values():
         db_cust = Customer(
             external_id=cust["external_id"],
@@ -43,31 +42,52 @@ def merge_and_sync_customers(wave_customers, wave_invoices, bigc_customers, bigc
         db.add(db_cust)
         db.flush()
         id_map[cust["external_id"]] = db_cust.id
+        contact_tracker[cust["external_id"]] = None
 
     db.commit()
 
     def insert_orders(orders, source):
         print(f"[INSERT DEBUG] Processing {len(orders)} orders for {source}")
         for i, order in enumerate(orders):
-            cust_id = id_map.get(order.get("customer_external_id"))
+            cust_ext_id = order.get("customer_external_id")
+            cust_id = id_map.get(cust_ext_id)
             if not cust_id:
-                print(f"[SKIP] Order #{i} skipped — no matching customer ID for external_id: {order.get('customer_external_id')}")
+                if source == "Wave":
+                    print(f"[SKIP] Order #{i} skipped — no matching customer ID for external_id: {cust_ext_id}")
                 continue
 
-            print(f"[ADD] Adding order #{i}: Invoice #{order.get('invoice_number')} for customer_id {cust_id}")
+            created_at = order.get("created_at")
+            if isinstance(created_at, str):
+                created_at = parse_datetime(created_at)
+
+            due_date = order.get("due_date")
+            if isinstance(due_date, str):
+                due_date = parse_datetime(due_date)
+
+            if source == "Wave":
+                print(f"[DEBUG] Wave Invoice #{order.get('invoice_number')} | "
+                      f"created_at: {order.get('created_at')} | parsed: {created_at}")
+                print(f"[ADD] Adding order #{i}: Invoice #{order.get('invoice_number')} for customer_id {cust_id}")
+
+            if created_at:
+                if contact_tracker[cust_ext_id] is None or created_at > contact_tracker[cust_ext_id]:
+                    contact_tracker[cust_ext_id] = created_at
+
             db_order = Order(
                 external_id=order["external_id"],
                 invoice_number=order.get("invoice_number"),
                 status=order.get("status"),
                 currency=order.get("currency"),
-                created_at=parse_datetime(order.get("created_at")),
-                due_date=parse_datetime(order.get("due_date")),
+                date=created_at,
+                created_at=created_at,
+                due_date=due_date,
                 customer_id=cust_id,
                 amount_due=order.get("amount_due"),
                 total=order.get("total"),
                 tax_total=order.get("tax_total"),
                 source=source
             )
+
             db.add(db_order)
             db.flush()
 
@@ -87,6 +107,11 @@ def merge_and_sync_customers(wave_customers, wave_invoices, bigc_customers, bigc
 
     insert_orders(wave_invoices, "Wave")
     insert_orders(bigc_orders, "BigCommerce")
+
+    for external_id, date in contact_tracker.items():
+        cid = id_map[external_id]
+        db.query(Customer).filter(Customer.id == cid).update({"last_contacted": date})
+
     db.commit()
     db.close()
 
@@ -103,6 +128,5 @@ def run_all_syncs():
     merge_and_sync_customers(wave_customers, raw_wave_invoices, bigc_customers, bigc_orders)
     print("✅ [SYNC COMPLETE]")
 
-# ✅ Enables CLI execution: py -m app.sync.sync_customers
 if __name__ == "__main__":
     run_all_syncs()

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 
 function SourceIcon({ source }) {
-  // Simple inline SVG icons for Wave and BigCommerce
   if (source.toLowerCase() === "wave") {
     return (
       <svg
@@ -45,11 +44,9 @@ export default function CustomerList() {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   useEffect(() => {
-    console.log("⏳ Fetching customers from:", `${API_URL}/api/customers`);
     fetch(`${API_URL}/api/customers`)
       .then((res) => res.json())
       .then((data) => {
-        console.log("Customer data from API:", data);
         setCustomers(data);
         const cache = {};
         data.forEach((c) => {
@@ -81,7 +78,6 @@ export default function CustomerList() {
   };
 
   const saveChanges = (id) => {
-    console.log("Submitting data for customer", id, formCache[id]);
     fetch(`${API_URL}/api/customers/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -110,9 +106,7 @@ export default function CustomerList() {
 
   return (
     <div className="px-4 py-3">
-      <h2 className="text-lg font-header font-bold uppercase text-accent mb-4">
-        Customers
-      </h2>
+      <h2 className="text-lg font-header font-bold uppercase text-accent mb-4">Customers</h2>
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <input
@@ -186,7 +180,7 @@ export default function CustomerList() {
                                     className="text-accent underline hover:text-accentLight"
                                   >
                                     <SourceIcon source={o.source} />
-                                    [{o.source.toUpperCase()}] #{o.external_id || o.id}
+                                    [{o.source.toUpperCase()}] #{o.invoice_number || o.external_id || o.id}
                                   </a>{" "}
                                   — {new Date(o.date).toLocaleDateString()}
                                 </li>
@@ -198,9 +192,7 @@ export default function CustomerList() {
                         </div>
 
                         <div>
-                          <div className="uppercase text-[11px] font-bold text-muted mb-1">
-                            Vehicle Info
-                          </div>
+                          <div className="uppercase text-[11px] font-bold text-muted mb-1">Vehicle Info</div>
                           <div className="flex flex-col md:flex-row gap-2">
                             <input
                               value={formCache[cust.id]?.vehicle_make || ""}
@@ -218,9 +210,7 @@ export default function CustomerList() {
                         </div>
 
                         <div>
-                          <div className="uppercase text-[11px] font-bold text-muted mb-1">
-                            Notes
-                          </div>
+                          <div className="uppercase text-[11px] font-bold text-muted mb-1">Notes</div>
                           <textarea
                             value={formCache[cust.id]?.notes || ""}
                             onChange={(e) => handleChange(cust.id, "notes", e.target.value)}

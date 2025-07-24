@@ -105,6 +105,7 @@ def fetch_wave_invoices_and_customers():
     invoices = []
     for edge in business["invoices"]["edges"]:
         inv = edge["node"]
+        print(f"[WAVE DEBUG] Invoice #{inv['invoiceNumber']} createdAt: {inv['createdAt']}")
         invoices.append({
             "external_id": inv["id"],
             "invoice_number": inv["invoiceNumber"],
@@ -127,5 +128,10 @@ def fetch_wave_invoices_and_customers():
             ],
             "source": "Wave"
         })
+
+    print("\n[DEBUG] Sample WAVE invoice dump:")
+    for inv in invoices[:5]:
+        print(f"Invoice #{inv.get('invoice_number')} | created_at: {inv.get('created_at')}")
+
 
     return customers, invoices

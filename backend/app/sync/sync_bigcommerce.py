@@ -3,7 +3,7 @@ import requests
 from dotenv import load_dotenv
 from app.core.database import SessionLocal
 from app.models.customer import Customer
-from app.models.order import Order
+from app.models.order import Order, parse_datetime
 from app.models.line_item import LineItem
 
 env_path = os.path.join(os.path.dirname(__file__), "../key.env")
@@ -53,6 +53,11 @@ def fetch_bigcommerce_orders_and_customers():
             customer_phone = billing.get("phone", "")
 
             external_id = str(order.get("customer_id") or order.get("id"))
+            created_at_raw = order.get("date_created")
+            created_at = parse_datetime(created_at_raw)
+
+            # ✅ Debug log
+            #print(f"[DEBUG] Order ID {order.get('id')} | Raw created_at: {created_at_raw} | Parsed: {created_at}")
 
             customers.append({
                 "external_id": external_id,
@@ -67,7 +72,7 @@ def fetch_bigcommerce_orders_and_customers():
                 "invoice_number": order.get("id"),
                 "status": order.get("status"),
                 "currency": order.get("currency"),
-                "created_at": order.get("date_created"),
+                "created_at": created_at,  # ✅ Parsed datetime
                 "customer_external_id": external_id,
                 "customer_name": customer_name or "Guest",
                 "amount_due": float(order.get("total_inc_tax", 0)),

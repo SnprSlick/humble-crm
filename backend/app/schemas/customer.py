@@ -5,12 +5,14 @@ from datetime import datetime
 class OrderOut(BaseModel):
     id: int
     external_id: Optional[str]
+    invoice_number: Optional[str]  # ✅ Add this line
     date: datetime
     total: Optional[float]
     source: str
 
     class Config:
         orm_mode = True
+
 
 class CustomerOut(BaseModel):
     id: int

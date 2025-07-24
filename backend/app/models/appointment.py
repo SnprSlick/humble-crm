@@ -3,6 +3,11 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.base import Base
 
+import typing
+if typing.TYPE_CHECKING:
+    from .order import Order
+    from .customer import Customer
+
 class Appointment(Base):
     __tablename__ = "appointments"
 
@@ -18,6 +23,7 @@ class Appointment(Base):
     invoice_id = Column(Integer, ForeignKey("orders.id"), nullable=True)
     service_id = Column(Integer, nullable=True)
 
+    # ✅ Safe relationships using string references
     customer = relationship("Customer", back_populates="appointments")
     invoice = relationship("Order", back_populates="appointment")
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.models.appointment import Appointment
@@ -98,3 +98,23 @@ def delete_appointment(appointment_id: int, db: Session = Depends(get_db)):
     db.delete(appointment)
     db.commit()
     return {"success": True}
+
+
+@router.get("/today")
+def get_todays_appointments(db: Session = Depends(get_db)):
+    today = datetime.now().date()
+    tomorrow = today + timedelta(days=1)
+    appointments = db.query(Appointment).filter(
+        Appointment.start_time >= today,
+        Appointment.start_time < tomorrow,
+    ).all()
+    return [
+        {
+            "id": a.id,
+            "customer": a.customer.name if a.customer else "Unassigned",
+            "type": a.appointment_type,
+            "time": a.start_time.strftime("%I:%M %p")
+        }
+        for a in appointments
+    ]
+

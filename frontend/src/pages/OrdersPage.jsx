@@ -60,7 +60,7 @@ export default function OrdersPage() {
     return (
       customerName(order).toLowerCase().includes(search) ||
       (order.customer?.email || "").toLowerCase().includes(search) ||
-      (order.external_id || "").includes(search) ||
+      (order.source !== "wave" && (order.external_id || "").includes(search)) ||
       (order.invoice_number || "").includes(search)
     );
   });
@@ -131,7 +131,11 @@ export default function OrdersPage() {
               <div>{customerName(order)}</div>
               <div className="text-muted flex items-center">
                 <SourceIcon source={order.source} />
-                {order.source === "wave" ? `#${order.invoice_number}` : `#${order.external_id}`}
+                {order.invoice_number
+                  ? `#${order.invoice_number}`
+                  : order.external_id
+                  ? `#${order.external_id}`
+                  : "—"}
               </div>
               <div><StatusBadge status={order.status} /></div>
               <div className="text-right font-bold text-accentLight">${order.total?.toFixed(2) || "0.00"}</div>

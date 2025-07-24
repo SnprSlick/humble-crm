@@ -1,79 +1,65 @@
 import os
-import requests
+import os
+db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "humble_crm.db"))
+print(f"[DEBUG] Writing to DB: {db_path}")
+print(f"[DEBUG] Exists? {os.path.exists(db_path)}")
 from dotenv import load_dotenv
-import json
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.models.order import Order, parse_datetime
+from app.models.customer import Customer
+from app.models.line_item import LineItem
+from app.models.customer import Base
 
-# Load .env from this script folder's ../key.env
-env_path = os.path.join(os.path.dirname(__file__), "app", "key.env")
+# Load env vars
+env_path = os.path.join(os.path.dirname(__file__), "../key.env")
+load_dotenv(env_path)
 
-if os.path.exists(env_path):
-    print("✅ Loaded .env from:", env_path)
-    load_dotenv(env_path)
-else:
-    print("⚠️ key.env not found at:", env_path)
+# Setup DB connection
+db_path = os.path.join(os.path.dirname(__file__), "../humble_crm.db")
+DATABASE_URL = f"sqlite:///{db_path}"
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-BIGC_STORE_HASH = os.getenv("BIGC_STORE_HASH")
-BIGC_ACCESS_TOKEN = os.getenv("BIGC_API_TOKEN")
-BIGC_CLIENT_ID = os.getenv("BIGC_CLIENT_ID")
+# Ensure schema exists
+Base.metadata.create_all(bind=engine)
 
-HEADERS_CUSTOMERS = {
-    "X-Auth-Token": BIGC_ACCESS_TOKEN,
-    "X-Auth-Client": BIGC_CLIENT_ID,
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-}
+# Simulate BigCommerce raw order data
+sample_raw_date = "Tue, 04 Dec 2018 03:01:32 +0000"  # RFC 2822
+parsed_date = parse_datetime(sample_raw_date)
+print(f"\n[TEST] Raw: {sample_raw_date}")
+print(f"[TEST] Parsed datetime: {parsed_date} ({type(parsed_date)})")
 
-HEADERS_ORDERS = {
-    "X-Auth-Token": BIGC_ACCESS_TOKEN,
-    "Accept": "application/json"
-}
+# Insert test customer and order
+db = SessionLocal()
 
-def fetch_bigcommerce_customers_and_orders():
-    customer_url = f"https://api.bigcommerce.com/stores/{BIGC_STORE_HASH}/v3/customers"
-    order_url = f"https://api.bigcommerce.com/stores/{BIGC_STORE_HASH}/v2/orders"
+# Create a test customer
+customer = Customer(
+    name="Date Tester",
+    email="test@example.com",
+    phone="1234567890",
+    source="Test",
+    external_id="test-date-001"
+)
+db.add(customer)
+db.flush()  # Get ID before insert
 
-    try:
-        print("[DEBUG] Fetching customers from:", customer_url)
-        cust_res = requests.get(customer_url, headers=HEADERS_CUSTOMERS)
-        cust_res.raise_for_status()
-        customers = cust_res.json().get("data", [])
-        print(f"[DEBUG] Retrieved {len(customers)} customers")
-        print("[DEBUG] Customers raw JSON:")
-        print(json.dumps(customers[:2], indent=2))  # print first 2 customers for brevity
+# Insert test order
+order = Order(
+    external_id="test-order-001",
+    invoice_number="TST123",
+    source="Test",
+    date=parsed_date,
+    created_at=parsed_date,
+    customer_id=customer.id,
+    total=123.45,
+)
+db.add(order)
+db.commit()
 
-        print("[DEBUG] Fetching orders from:", order_url)
-        order_res = requests.get(order_url, headers=HEADERS_ORDERS)
-        order_res.raise_for_status()
-        orders = order_res.json()
-        print(f"[DEBUG] Retrieved {len(orders)} orders")
-        print("[DEBUG] Orders raw JSON:")
-        print(json.dumps(orders[:2], indent=2))  # print first 2 orders for brevity
+# Read back
+retrieved = db.query(Order).filter_by(external_id="test-order-001").first()
+print(f"\n[VERIFY] Retrieved Order Date: {retrieved.date}")
+print(f"[VERIFY] Retrieved Created At: {retrieved.created_at}")
 
-    except Exception as e:
-        print("❌ BigCommerce API request failed:", e)
-        return [], {}
-
-    orders_by_customer = {cust.get("id"): [] for cust in customers}
-
-    for order in orders:
-        cust_id = order.get("customer_id")
-        if cust_id in orders_by_customer:
-            orders_by_customer[cust_id].append({
-                "external_id": str(order["id"]),
-                "date": order.get("date_created") or order.get("created_at"),
-                "total": float(order.get("total_inc_tax") or 0),
-                "shipping_address": order.get("shipping_address", {}).get("formatted_address"),
-                "shipping_carrier": order.get("shipping_provider"),
-                "shipping_tracking": order.get("tracking_number"),
-            })
-
-    return customers, orders_by_customer
-
-
-if __name__ == "__main__":
-    customers, orders = fetch_bigcommerce_customers_and_orders()
-    print(f"Total customers: {len(customers)}")
-    total_orders = sum(len(v) for v in orders.values())
-    print(f"Total orders: {total_orders}")
-    for cid, cust_orders in orders.items():
-        print(f"Customer {cid} has {len(cust_orders)} orders")
+db.close()

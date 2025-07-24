@@ -1,17 +1,28 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from email.utils import parsedate_to_datetime
+
 from app.models.customer import Base
 from app.models.line_item import LineItem
 
-# TEMP: You can move this to a utils file later
+import typing
+if typing.TYPE_CHECKING:
+    from .appointment import Appointment  # only for linting/autocomplete
+
 def parse_datetime(dt_str):
     if not dt_str:
         return None
     try:
-        return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+        # Try RFC 2822 (BigCommerce format)
+        return parsedate_to_datetime(dt_str)
     except Exception:
-        return None
+        try:
+            # Try ISO 8601 (Wave format)
+            return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+        except Exception as e:
+            print(f"[PARSE ERROR] Could not parse datetime: {dt_str} | {e}")
+            return None
 
 class Order(Base):
     __tablename__ = "orders"
@@ -45,6 +56,6 @@ class Order(Base):
 
     customer = relationship("Customer", back_populates="orders")
     line_items = relationship("LineItem", back_populates="order", cascade="all, delete-orphan")
+
+    # Optional: re-enable when Appointment model is ready
     appointment = relationship("Appointment", back_populates="invoice", uselist=False)
-
-

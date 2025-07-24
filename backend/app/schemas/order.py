@@ -13,7 +13,7 @@ class CustomerOut(BaseModel):
 
 class OrderOut(BaseModel):
     id: int
-    external_id: str
+    external_id: Optional[str]
     invoice_number: Optional[str]
     source: str
     date: datetime
