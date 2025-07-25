@@ -41,6 +41,7 @@ from app.api.appointment import router as appointment_router
 from app.routes.drop_ship_routes import router as drop_ship_router
 from app.api.google_calendar import router as google_calendar_router
 from app.api.dashboard import router as dashboard_router
+from app.api.service_jobs import router as service_jobs_router
 
 # ⚙️ Sync on startup
 from app.sync import sync_customers
@@ -83,6 +84,7 @@ app.include_router(todo_router, prefix="/api")
 app.include_router(appointment_router, prefix="/api")
 app.include_router(google_calendar_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(service_jobs_router)
 
 # 🔍 Health check
 @app.get("/")

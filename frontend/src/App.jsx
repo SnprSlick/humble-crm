@@ -12,6 +12,7 @@ import CalendarPage from './pages/CalendarPage';
 import ServicePage from './pages/ServicePage';
 import DropShipDashboard from './pages/DropShipDashboard';
 import PortalApp from './pages/PortalApp';
+import ServiceJobsPage from "./pages/ServiceJobsPage"; // ✅ make sure it's imported
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/service" element={<ServicePage />} />
           <Route path="/drop-ship" element={<DropShipDashboard />} />
+          <Route path="/service-jobs" element={<ServiceJobsPage />} />
         </Route>
 
         {/* Customer portal layout */}

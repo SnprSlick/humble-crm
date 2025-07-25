@@ -19,7 +19,7 @@ export default function Sidebar() {
     { label: 'Orders', icon: <Package size={18} />, to: '/orders' },
     { label: 'To-Do', icon: <ClipboardList size={18} />, to: '/todo' },
     { label: 'Calendar', icon: <Calendar size={18} />, to: '/calendar' },
-    { label: 'Service', icon: <Wrench size={18} />, to: '/service' },
+    { label: 'Service Jobs', icon: <Wrench size={18} />, to: '/service-jobs' },
     { label: 'Drop Ship', icon: <Truck size={18} />, to: '/drop-ship' },
   ];
 

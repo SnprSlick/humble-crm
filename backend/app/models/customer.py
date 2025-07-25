@@ -29,3 +29,5 @@ class Customer(Base):
     orders = relationship("Order", back_populates="customer")
     appointments = relationship("Appointment", back_populates="customer")
     user_account = relationship("UserCustomer", back_populates="customer", uselist=False)
+    service_jobs = relationship("ServiceJob", back_populates="customer")
+

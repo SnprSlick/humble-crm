@@ -65,3 +65,25 @@ def update_customer(customer_id: int, payload: CustomerUpdate, db: Session = Dep
     db.commit()
     db.refresh(customer)
     return customer
+
+class CustomerCreate(BaseModel):
+    name: str
+    email: str | None = None
+    phone: str | None = None
+
+@router.post("/customers")
+def create_customer(customer: CustomerCreate, db: Session = Depends(get_db)):
+    existing = db.query(Customer).filter(Customer.name == customer.name).first()
+    if existing:
+        return existing  # return existing if duplicate name
+
+    db_customer = Customer(
+        name=customer.name,
+        email=customer.email,
+        phone=customer.phone,
+        source="Manual"
+    )
+    db.add(db_customer)
+    db.commit()
+    db.refresh(db_customer)
+    return db_customer
